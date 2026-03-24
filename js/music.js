@@ -712,24 +712,31 @@ function buildAPI(isStub){
 
     removeAt: (i) => {
       if (i<0 || i>=playlist.length) return;
-      // revoke blobs if any
       const it = playlist[i];
       if (it && it.kind==='file' && it._blob) { try { URL.revokeObjectURL(it._blob); } catch {} }
 
-      playlist.splice(i,1);
+      const wasPlaying = isPlaying;
+      playlist.splice(i, 1);
 
-      if (trackIdx >= playlist.length) trackIdx = Math.max(0, playlist.length-1);
-      if (playlist.length) {
-        loadTrack(false, _ui.updateTitle);
-      } else {
-        // empty
+      if (!playlist.length) {
+        trackIdx = 0;
         audio.pause();
         audio.removeAttribute('src');
         audio.load();
         isPlaying = false;
         publishAudioBus();
         emit('state', { playing: isPlaying });
+      } else if (i < trackIdx) {
+        // deleted a track before current — shift index, don't reload (track keeps playing)
+        trackIdx -= 1;
+        _ui.updateTitle?.();
+      } else if (i === trackIdx) {
+        // deleted the current track — clamp and load next
+        trackIdx = Math.min(trackIdx, playlist.length - 1);
+        loadTrack(wasPlaying, _ui.updateTitle);
       }
+      // i > trackIdx: deleted after current — no change needed
+
       notifyPlaylist();
     },
 
