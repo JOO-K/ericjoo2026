@@ -736,9 +736,14 @@ export function initDrawStudio(){
   });
   galEmpty.innerHTML='no drawings yet<br>save one from the studio';
 
-  function renderGalleryItems(){
+  function isAdmin(){return localStorage.getItem('ericjoo_admin')==='ej2025';}
+  let adminCached=false;
+  async function checkAdminStatus(){adminCached=isAdmin();}
+
+  async function renderGalleryItems(){
+    await checkAdminStatus();
     galleryPanel.innerHTML='';
-    const items=galleryLoad();
+    const items=await galleryLoad();
     if(!items.length){galleryPanel.appendChild(galEmpty);return;}
     for(const item of items){
       const wrap=div({position:'relative',borderRadius:'5px',overflow:'hidden',
@@ -753,7 +758,7 @@ export function initDrawStudio(){
       footer.textContent=new Date(item.ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
       wrap.addEventListener('mouseenter',()=>wrap.style.borderColor='rgba(230,232,240,0.3)');
       wrap.addEventListener('mouseleave',()=>wrap.style.borderColor='rgba(230,232,240,0.1)');
-      if(isAdmin()){
+      if(adminCached){
         const del=div({
           position:'absolute',top:'3px',left:'3px',
           background:'rgba(0,0,0,0.65)',color:'rgba(230,232,240,0.5)',
@@ -773,7 +778,7 @@ export function initDrawStudio(){
       img.addEventListener('click',()=>{
         const prev=div({position:'fixed',inset:'0',zIndex:'100002',background:'rgba(0,0,0,0.92)',
           display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'});
-        const big=mk('img',{maxWidth:'90vw',maxHeight:'90vh',borderRadius:'6px',border:DS_BORDER});
+        const big=mk('img',{maxWidth:'90vw',maxHeight:'90vh',borderRadius:'6px',border:'1px solid rgba(230,232,240,0.14)'});
         big.src=item.dataUrl;prev.appendChild(big);
         prev.addEventListener('click',()=>prev.remove());
         document.body.appendChild(prev);
@@ -802,9 +807,7 @@ export function initDrawStudio(){
 
   document.body.appendChild(galleryPanel);
 
-  function isAdmin(){return localStorage.getItem('ericjoo_admin')==='ej2025';}
-
-  /* ═══════════════════════════════ TOOLBAR ═══════════════════════════════
+/* ═══════════════════════════════ TOOLBAR ═══════════════════════════════
      position: absolute inside the overlay (which is fixed inset:0)
      top/bottom anchor keeps it within viewport regardless of screen size
   ═══════════════════════════════════════════════════════════════════════ */
