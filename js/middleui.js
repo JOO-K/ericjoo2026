@@ -411,11 +411,11 @@ export function initMiddleUI(){
     }
   };
 
-  // MUSIC API hooks
-  const API = window.__MUSIC_API;
-  if (API && API.on) {
+  // MUSIC API hooks — deferred until __MUSIC_API is set by music.js
+  (function hookWhenReady(){
+    const API = window.__MUSIC_API;
+    if (!API || !API.on) { requestAnimationFrame(hookWhenReady); return; }
     API.on('playlistchange', ()=>{
-      // show playlist as soon as any tracks are added (via music player upload)
       _showPlaylist = true;
       if (!_playlistPanel) {
         _playlistPanel = buildPlaylistPanel();
@@ -430,7 +430,7 @@ export function initMiddleUI(){
     API.on('trackindex',  (idx)=>{
       if (typeof idx === 'number') { _lastActiveIdx = idx; if (_showPlaylist) renderPlaylist(); }
     });
-  }
+  })();
 
   (function pollActivity(){
     const idx = readActiveIndex();
